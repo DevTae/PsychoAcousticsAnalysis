@@ -17,15 +17,15 @@ events = []
 
 with open(event_file_name, "r") as f:
     for line in f.readlines():
-        timestamp, level, duration = line.split(',')
+        haptic_type, start_time, haptic_level, duration = line.split(',')
         duration = duration.replace("\n", "")
 
         # 값 읽어오기
-        timestamp = float(timestamp) * 1000
-        level = int(level)
+        start_time = float(start_time) * 1000
+        haptic_level = int(haptic_level)
         duration = float(duration) * 1000
 
-        events.append((timestamp, level, duration))
+        events.append((haptic_type, start_time, haptic_level, duration))
 
 
 # mp3 파일 총 시간 구하기
@@ -44,9 +44,9 @@ for event in events:
         current_time = time.time()
         elapsed_time = current_time - start_time
         elapsed_time *= 1000
-        if elapsed_time >= event[0]:
-            print(f"[log] {event[1]} 단계의 이벤트 발생! {round(elapsed_time, 2)}")
-            if elapsed_time > event[0] + event[2]:
+        if elapsed_time >= event[1]:
+            print(f"[log] {event[2]} 단계의 이벤트 발생! {round(elapsed_time, 2)}")
+            if elapsed_time > event[1] + event[3]:
                 break
         time.sleep(0.1)
 
