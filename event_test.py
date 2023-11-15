@@ -7,7 +7,7 @@ import time
 
 
 # 파일 이름 읽기
-mp3_file_name = os.path.join("demo", "test1.mp3")
+content_file_name = os.path.join("demo", "test1.mp3")
 event_file_name = mp3_file_name.replace(".mp3", ".txt")
 
 
@@ -30,11 +30,11 @@ with open(event_file_name, "r") as f:
 
 # mp3 파일 총 시간 구하기
 pygame.init()
-sound = pygame.mixer.Sound(mp3_file_name)
+sound = pygame.mixer.Sound(content_file_name)
 total_duration = sound.get_length()
 
 # mp3 파일 재생하기
-pygame.mixer.music.load(mp3_file_name)
+pygame.mixer.music.load(content_file_name)
 pygame.mixer.music.play()
 start_time = time.time()
 
