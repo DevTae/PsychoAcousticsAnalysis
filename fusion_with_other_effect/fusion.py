@@ -1,9 +1,9 @@
 fusion_result_file = "fusion_result.txt"
 
 audio_result_file = "audio_result.txt"
-silency_result_file = "silency_result.txt" # silency 현재 미구현
 vision_temp_result_file = "vision_temp_result.txt"
 vision_wind_result_file = "vision_wind_result.txt"
+silency_result_file = "silency_result.txt" 
 
 
 # [0] timestamp, [1] effect, [2] strength, [3] duration
@@ -14,6 +14,10 @@ vision_temp_result = list()
 
 # [0] timestamp, [1] effect, [2] strength, [3] duration
 vision_wind_result = list()
+
+# [0] timestamp, [1] (loc1, loc2, ... (delimeter='|')), [2] duration
+silency_result = list()
+
 
 with open(audio_result_file, "r") as f:
     for line in f.readlines():
@@ -35,6 +39,13 @@ with open(vision_wind_result_file, "r") as f:
         duration = duration.replace("\n", "")
         vision_wind_result.append((float(timestamp), effect, strength, float(duration)))
 
+with open(silency_result_file, "r") as f:
+    for line in f.readlines():
+        timestamp, location, duration = line.split(',')
+        duration = duration.replace("\n", "")
+        location = location.split('|')
+        silency_result.append((float(timestamp), location, float(duration)))
+
 
 """
 [0] timestamp
@@ -52,6 +63,7 @@ frame_interval = 0.025 # 25ms 기준으로 자르기
 audio_result_index = 0
 vision_temp_result_index = 0
 vision_wind_result_index = 0
+silency_result_index = 0
 
 while now_timestamp <= video_total_length:
     # 현재 timestamp 에 맞는 index 찾기
@@ -61,6 +73,8 @@ while now_timestamp <= video_total_length:
         vision_temp_result_index += 1
     while len(vision_wind_result) > vision_wind_result_index + 1 and now_timestamp > vision_wind_result[vision_wind_result_index][0] + vision_wind_result[vision_wind_result_index][3]:
         vision_wind_result_index += 1
+    while len(silency_result) > silency_result_index + 1 and now_timestamp > silency_result[silency_result_index][0] + silency_result[silency_result_index][2]:
+        silency_result_index += 1
 
     fusion = [now_timestamp,
               0, 0, 0, 0, 0, 0, 0, 0,
@@ -91,8 +105,9 @@ while now_timestamp <= video_total_length:
     temp1, temp2 = vision_temp_event[2]
     duration = vision_temp_event[3]
     if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
-        for i in range(11, 12 + 1):
-            fusion[i] = str(temp1) + "|" + str(temp2) # 일단 온도 부분 이렇게 설정해두었습니다.
+        if effect == "ta":
+            for i in range(11, 12 + 1):
+                fusion[i] = str(temp1) + "|" + str(temp2) # 일단 온도 부분 이렇게 설정해두었습니다.
 
     # 비전에서의 바람 이벤트에 해당되는 이벤트 연산 진행
     vision_wind_event = vision_wind_result[vision_wind_result_index]
@@ -101,8 +116,20 @@ while now_timestamp <= video_total_length:
     strength = vision_wind_event[2]
     duration = vision_wind_event[3]
     if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
-        for i in range(13, 14 + 1):
-            fusion[i] = strength
+        if effect == "wa":
+            for i in range(13, 14 + 1):
+                fusion[i] = strength
+
+    # silency detection 을 바탕으로 액츄에이터 위치 조절
+    silency_info = silency_result[silency_result_index]
+    timestamp = silency_info[0]
+    location = silency_info[1]
+    duration = silency_info[2]
+    if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
+        # location 에 해당되는 액츄에이터의 경우 신호를 끄게 됨
+        for i in range(1, 8+1):
+            if fusion[i] != 0 and ("v" + str(i-1)) not in location:
+                fusion[i] = 0
 
     fusion_result.append(fusion)
 
