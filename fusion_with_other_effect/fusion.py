@@ -58,7 +58,7 @@ fusion_result = list()
 
 video_total_length = 100 # 시연 동영상 길이
 now_timestamp = 0
-frame_interval = 0.025 # 25ms 기준으로 자르기
+frame_interval = 0.1 # 100ms 기준으로 자르기 --> 추후 다운
 
 audio_result_index = 0
 vision_temp_result_index = 0
@@ -107,7 +107,12 @@ while now_timestamp <= video_total_length:
     if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
         if effect == "ta":
             for i in range(11, 12 + 1):
-                fusion[i] = str(temp1) + "|" + str(temp2) # 일단 온도 부분 이렇게 설정해두었습니다.
+                if temp1 < temp2:
+                    fusion[i] = 1
+                else:
+                    fusion[i] = 0
+                # 일단 온도 부분 이렇게 설정해두었습니다.
+                #fusion[i] = str(temp1) + "|" + str(temp2) 
 
     # 비전에서의 바람 이벤트에 해당되는 이벤트 연산 진행
     vision_wind_event = vision_wind_result[vision_wind_result_index]
