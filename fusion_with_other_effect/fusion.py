@@ -58,7 +58,7 @@ fusion_result = list()
 
 video_total_length = 100 # 시연 동영상 길이
 now_timestamp = 0
-frame_interval = 0.1 # 100ms 기준으로 자르기 --> 추후 다운
+frame_interval = 0.1 # 100ms 기준으로 자르기
 
 audio_result_index = 0
 vision_temp_result_index = 0
@@ -73,7 +73,7 @@ while now_timestamp <= video_total_length:
         vision_temp_result_index += 1
     while len(vision_wind_result) > vision_wind_result_index + 1 and now_timestamp > vision_wind_result[vision_wind_result_index][0] + vision_wind_result[vision_wind_result_index][3]:
         vision_wind_result_index += 1
-    while len(silency_result) > silency_result_index + 1 and now_timestamp > silency_result[silency_result_index][0] + silency_result[silency_result_index][2]:
+    while len(silency_result) > silency_result_index + 1 and now_timestamp > silency_result[silency_result_index + 1][0]: # 다음 시작점을 넘기면 silency index 변경
         silency_result_index += 1
 
     fusion = [now_timestamp,
@@ -84,27 +84,28 @@ while now_timestamp <= video_total_length:
 
     # 오디오 이벤트에 해당되는 이벤트 연산 진행
     audio_event = audio_result[audio_result_index]
-    timestamp = audio_event[0]
+    event_timestamp = audio_event[0]
     effect = audio_event[1]
     strength = audio_event[2]
+    max_strength = 255
     duration = audio_event[3]
-    if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
+    if event_timestamp <= now_timestamp and now_timestamp <= event_timestamp + duration:
         if effect == "va|pa":
             for i in range(1, 8 + 1):
-                fusion[i] = round(float(strength.split('|')[0]) * 255)
+                fusion[i] = round(float(strength.split('|')[0]) * max_strength)
             for i in range(9, 10 + 1):
-                fusion[i] = round(float(strength.split('|')[1]) * 255)
+                fusion[i] = round(float(strength.split('|')[1]) * max_strength)
         elif effect == "va":
             for i in range(1, 8 + 1):
-                fusion[i] = round(float(strength) * 255)
+                fusion[i] = round(float(strength) * max_strength)
 
     # 비전에서의 온도 이벤트에 해당되는 이벤트 연산 진행
     vision_temp_event = vision_temp_result[vision_temp_result_index]
-    timestamp = vision_temp_event[0]
+    event_timestamp = vision_temp_event[0]
     effect = vision_temp_event[1]
     temp1, temp2 = vision_temp_event[2]
     duration = vision_temp_event[3]
-    if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
+    if event_timestamp <= now_timestamp and now_timestamp <= event_timestamp + duration:
         if effect == "ta":
             for i in range(11, 12 + 1):
                 if temp1 < temp2:
@@ -116,25 +117,26 @@ while now_timestamp <= video_total_length:
 
     # 비전에서의 바람 이벤트에 해당되는 이벤트 연산 진행
     vision_wind_event = vision_wind_result[vision_wind_result_index]
-    timestamp = vision_wind_event[0]
+    event_timestamp = vision_wind_event[0]
     effect = vision_wind_event[1]
     strength = vision_wind_event[2]
     duration = vision_wind_event[3]
-    if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
+    if event_timestamp <= now_timestamp and now_timestamp <= event_timestamp + duration:
         if effect == "wa":
             for i in range(13, 14 + 1):
                 fusion[i] = strength
 
     # silency detection 을 바탕으로 액츄에이터 위치 조절
     silency_info = silency_result[silency_result_index]
-    timestamp = silency_info[0]
+    event_timestamp = silency_info[0]
     location = silency_info[1]
     duration = silency_info[2]
-    if timestamp <= now_timestamp and now_timestamp <= timestamp + duration:
+    if event_timestamp <= now_timestamp and now_timestamp <= event_timestamp + duration:
         # location 에 해당되는 액츄에이터의 경우 신호를 끄게 됨
-        for i in range(1, 8+1):
-            if fusion[i] != 0 and ("v" + str(i-1)) not in location:
-                fusion[i] = 0
+        if "va" not in location:
+            for i in range(1, 8+1):
+                if fusion[i] != 0 and (("v" + str(i-1)) not in location):
+                    fusion[i] = 0
 
     fusion_result.append(fusion)
 
