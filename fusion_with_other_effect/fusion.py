@@ -59,6 +59,7 @@ fusion_result = list()
 video_total_length = 100 # 시연 동영상 길이
 now_timestamp = 0
 frame_interval = 0.1 # 100ms 기준으로 자르기
+solenoid_proper_duration = 0.25 # 적어도 0.25초마다 이벤트가 변화되도록 설정
 
 audio_result_index = 0
 vision_temp_result_index = 0
@@ -94,7 +95,17 @@ while now_timestamp <= video_total_length:
             for i in range(1, 8 + 1):
                 fusion[i] = round(float(strength.split('|')[0]) * max_strength)
             for i in range(9, 10 + 1):
-                fusion[i] = round(float(strength.split('|')[1]) * max_strength)
+                # 솔레노이드 들썩들썩 효과 연출을 위한 조건문 추가 (최소 효과 유지 시간 추가)
+                if len(fusion_result) > 0 and fusion_result[-1][i] == 0:
+                    solenoid_push_start_time = now_timestamp
+                elif len(fusion_result) == 0:
+                    solenoid_push_start_time = now_timestamp
+
+                if now_timestamp - solenoid_push_start_time > solenoid_proper_duration:
+                    fusion[i] = 0
+                else:
+                    fusion[i] = round(float(strength.split('|')[1]) * max_strength)
+                    
         elif effect == "va":
             for i in range(1, 8 + 1):
                 fusion[i] = round(float(strength) * max_strength)
