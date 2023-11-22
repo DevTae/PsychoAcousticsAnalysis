@@ -8,7 +8,8 @@ import time
 
 
 # 파일 이름 읽기
-mp3_file_name = os.path.join("demo", "test1.mp3")
+#mp3_file_name = os.path.join("demo", "test1.mp3")
+mp3_file_name = os.path.join("demo", "test5.mp3")
 event_file_name = mp3_file_name.replace(".mp3", ".txt")
 
 
@@ -59,3 +60,4 @@ while True:
 
 pygame.mixer.music.stop()
 pygame.quit()
+
